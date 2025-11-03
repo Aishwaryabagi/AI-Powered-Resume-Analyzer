@@ -2,6 +2,9 @@
 
 An intelligent Flask-based web application that analyzes resumes (PDF/DOCX), extracts skills using NLP, and recommends the most suitable job roles (like Data Scientist, Analyst, Developer, or DevOps Engineer) with confidence percentages.
 
+![image alt](<img width="1218" height="876" alt="image" src="https://github.com/user-attachments/assets/08877e29-8cde-448c-aa8e-b0d88b39a1bb" />
+)
+
 🚀 Features
 
 ✅ Upload and analyze resumes in PDF or DOCX format
