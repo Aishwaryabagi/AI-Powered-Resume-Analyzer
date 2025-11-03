@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Role Analyzer</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        .container {
+            max-width: 650px;
+            margin: 50px auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            padding: 30px 40px;
+            text-align: center;
+            transition: all 0.3s ease-in-out;
+        }
+        h1 {
+            color: #1a73e8;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        p {
+            color: #555;
+        }
+        .upload-box {
+            border: 2px dashed #1a73e8;
+            padding: 40px;
+            border-radius: 12px;
+            background: #f0f7ff;
+            transition: 0.3s;
+        }
+        .upload-box:hover {
+            background: #e8f0fe;
+        }
+        input[type="file"] {
+            margin-bottom: 15px;
+        }
+        button {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #155fc2;
+        }
+        #result {
+            margin-top: 25px;
+            text-align: left;
+        }
+        .progress-bar {
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #1a73e8, #42a5f5);
+            width: 0%;
+            border-radius: 5px;
+            transition: width 1s ease-in-out;
+        }
+        .skill-tag {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1565c0;
+            border-radius: 20px;
+            padding: 6px 12px;
+            margin: 5px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .error {
+            color: #d32f2f;
+            font-weight: 500;
+        }
+        .success {
+            color: #2e7d32;
+            font-weight: 500;
+        }
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #777;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Resume Role Analyzer</h1>
+        <p>Upload your resume (PDF or DOCX, max 2MB) to discover your top career roles and detected skills.</p>
+
+        <div class="upload-box" id="upload-box">
+            <input type="file" id="resume" accept=".pdf,.docx"><br>
+            <button onclick="analyzeResume()">Analyze Resume</button>
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <footer>
+        <p>Made with 💙 by Aishwarya Bagi</p>
+    </footer>
+
+    <script>
+        async function analyzeResume() {
+            const fileInput = document.getElementById('resume');
+            const resultDiv = document.getElementById('result');
+            const uploadBox = document.getElementById('upload-box');
+            
+            resultDiv.innerHTML = '';
+            
+            if (!fileInput.files.length) {
+                showError(resultDiv, "⚠️ Please select a file!");
+                return;
+            }
+
+            const file = fileInput.files[0];
+
+            if (file.size > 2 * 1024 * 1024) {
+                showError(resultDiv, "File too large! Max size is 2MB.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('resume', file);
+
+            resultDiv.innerHTML = "<p>🔍 Analyzing your resume... please wait.</p>";
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `Server error: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    showError(resultDiv, data.error);
+                    return;
+                }
+
+                let rolesHTML = '';
+                if (Array.isArray(data.roles)) {
+                    rolesHTML = `<h3>🎯 Top Role Matches:</h3>` + data.roles.map(r => `
+                        <div><strong>${r.role}</strong> — ${r.confidence}%</div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${r.confidence}%"></div></div>
+                    `).join('');
+                }
+
+                let skillsHTML = '';
+                if (data.skills_found?.length) {
+                    skillsHTML = `<h3>🧠 Skills Detected:</h3><div>${
+                        data.skills_found.map(skill => `<span class="skill-tag">${skill}</span>`).join('')
+                    }</div>`;
+                }
+
+                let strengthHTML = '';
+                if (data.profile_strength !== undefined) {
+                    strengthHTML = `<p><strong>Profile Strength:</strong> ${data.profile_strength}%</p>`;
+                }
+
+                resultDiv.innerHTML = `${rolesHTML}${skillsHTML}${strengthHTML}`;
+            } catch (err) {
+                console.error(err);
+                showError(resultDiv, err.message || "An error occurred while analyzing the resume.");
+            }
+        }
+
+        function showError(element, message) {
+            element.innerHTML = `<p class="error">${message}</p>`;
+        }
+    </script>
+</body>
+</html>
